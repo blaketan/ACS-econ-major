@@ -157,15 +157,21 @@ for i in r:
 	npv_pri_median = 0
 	npv_pub_mean = 0
 	npv_pub_median = 0
+	npv_non_mean = 0
+	npv_non_median = 0
 	for x in range(45):
 		ir = math.pow(i,x)
 		if private[x][4]>0 : npv_pri_mean += (private[x][4]) / ir
 		if public[x][4]>0 : npv_pub_mean += (public[x][4]) / ir
 		if private[x][5]>0 : npv_pri_median += (private[x][5]) / ir
 		if public[x][5]>0 : npv_pub_median += (public[x][5]) / ir
-
+	for x in range(48):
+		ir = math.pow(i,x)
+		if non[x][4]>0 : npv_non_mean += (non[x][4]) / ir
+		if non[x][5]>0 : npv_non_median += (non[x][5]) / ir
 	print "\n At %f interest rate: public NPV income -> mean = %f median = %f" % (i-1, npv_pub_mean, npv_pub_median)
 	print "\n At %f interest rate: private NPV income -> mean = %f median = %f" % (i-1, npv_pri_mean, npv_pri_median)
+	print "\n At %f interest rate: highsch NPV income -> mean = %f median = %f" % (i-1, npv_non_mean, npv_non_median)
 
 
 pub_mean = [row[4] for row in public]
