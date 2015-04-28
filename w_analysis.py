@@ -27,6 +27,7 @@ def weighted_mean(data,weight):
 
 public = []
 private = []
+non = []
 
 for i in range(45):
 	public.append([i,[],[]])
@@ -45,6 +46,7 @@ with open('condensedacs.csv') as csvfile:
 			if age>=22 and age<=66 and int(row['WAGP'])>1:
 				private[age-22][1].append(float(row['WAGP'])*float(row['ADJINC'])*0.000001)
 				private[age-22][2].append(int(row['PWGTP']))
+
 
 print "Public data: " 
 print public
