@@ -23,7 +23,7 @@ def weighted_mean(data,weight):
 	else:
 		return np.average(data,weights=weight)
 def w_med_sd(data,weight):
-	if len(data)==1:
+	if len(data)<2:
 		return 0
 	indices = np.argsort(data)
 	s_data = np.array(data)[indices]
@@ -31,37 +31,47 @@ def w_med_sd(data,weight):
 	c_weights = np.cumsum(s_weights)
 	base = c_weights[len(c_weights)-1]
 	df = 2.0 #design factor
-	se_50 = df * math.sqrt( (95.to_f/(5*base)) * math.pow(50,2))
+	se_50 = df * math.sqrt( (95/float(5*base)) * math.pow(50,2))
+	if se_50>48.0:
+		se_50=48.0
 	p_lower = (50-se_50)
 	p_upper = (50+se_50)
 	i_lower = None
 	i_upper = None
 	for i in range(len(c_weights)):
-		if i_lower == None and p_lower <= (c_weights[i].to_f/base):
+		if i_lower == None and p_lower <= (c_weights[i]/float(base))*100:
 			i_lower=i
-		if p_upper <= (c_weights[i].to_f/base)
+		if p_upper <= (c_weights[i]/float(base))*100:
 			i_upper=i
 			break
 	lower_bound=0
-	upper_boun=0
+	upper_bound=0
 	if i_lower==i_upper:
-		a1 = s_data[i_lower]
-		a2 = s_data[i_lower+1]
-		c1 = (c_weights[i_lower].to_f/base) * 100
-		c2 = (c_weights[i_lower+1].to_f/base) * 100
-		lower_bound= ((p_lower-c1)/(c2-c1))*(a2-a1)+a1
-		upper_bound= ((p_upper-c1)/(c2-c1))*(a2-a1)+a1
+		try:
+			a1 = s_data[i_lower]
+			a2 = s_data[i_lower+1]
+			c1 = (c_weights[i_lower]/float(base)) * 100
+			c2 = (c_weights[i_lower+1]/float(base)) * 100
+			lower_bound= ((p_lower-c1)/(c2-c1))*(a2-a1)+a1
+			upper_bound= ((p_upper-c1)/(c2-c1))*(a2-a1)+a1
+		except IndexError:
+			lower_bound=s_data[i_lower]
+			upper_bound=s_data[i_lower]
 	else:
-		a1 = s_data[i_lower]
-		a2 = s_data[i_lower+1]
-		b1 = s_data[i_upper]
-		b2 = s_data[i_upper+1]
-		c1 = (c_weights[i_lower].to_f/base) * 100
-		c2 = (c_weights[i_lower+1].to_f/base) * 100
-		d1 = (c_weights[i_upper].to_f/base) * 100
-		d2 = (c_weights[i_upper+1].to_f/base) * 100
-		lower_bound= ((p_lower-c1)/(c2-c1))*(a2-a1)+a1
-		upper_bound= ((p_upper-d1)/(d2-d1))*(b2-b1)+b1
+		try:
+			a1 = s_data[i_lower]
+			a2 = s_data[i_lower+1]
+			b1 = s_data[i_upper]
+			b2 = s_data[i_upper+1]
+			c1 = (c_weights[i_lower]/float(base)) * 100
+			c2 = (c_weights[i_lower+1]/float(base)) * 100
+			d1 = (c_weights[i_upper]/float(base)) * 100
+			d2 = (c_weights[i_upper+1]/float(base)) * 100
+			lower_bound= ((p_lower-c1)/(c2-c1))*(a2-a1)+a1
+			upper_bound= ((p_upper-d1)/(d2-d1))*(b2-b1)+b1
+		except IndexError:
+			lower_bound=s_data[i_lower]
+			upper_bound=s_data[i_lower]
 	return 0.5*(upper_bound-lower_bound)
 
 
@@ -72,6 +82,9 @@ non = []
 for i in range(45):
 	public.append([i,[],[]])
 	private.append([i,[],[]])
+
+for i in range(48):
+	non.append([i,[],[]])
 
 with open('condensedacs.csv') as csvfile:
 	reader = csv.DictReader(csvfile)
@@ -90,9 +103,13 @@ with open('condensedacs.csv') as csvfile:
 with open('condensedacs2.csv') as csvfile:
 	reader = csv.DictReader(csvfile)
 	for row in reader:
-		age = int(row['AGEP'])
-		non[age-19][1].append(float(row['WAGP'])*float(row['ADJINC'])*0.000001)
-		non[age-19][2].append(int(row['PWGTP']))
+		try:
+			age = int(row['AGEP'])
+			if age>=19 and age<=66:
+				non[age-19][1].append(float(row['WAGP'])*float(row['ADJINC'])*0.000001)
+				non[age-19][2].append(int(row['PWGTP']))
+		except ValueError:
+			print row
 
 
 
@@ -111,7 +128,7 @@ pri_life_median = 0
 pub_life_median = 0
 pri_life_mean = 0
 pub_life_mean = 0
-#public[age-22, [all data values],[data weights],len,mean,median]
+#public[age-22, [all data values],[data weights],len,mean,median,sd]
 for i in range(45):
 	arr_pub = np.array(public[i][1])
 	arr_pub_w = np.array(public[i][2])
@@ -120,10 +137,12 @@ for i in range(45):
 	public[i].append(np.sum(arr_pub_w))
 	public[i].append(weighted_mean(arr_pub,arr_pub_w))
 	public[i].append(weighted_median(arr_pub,arr_pub_w))
+	public[i].append(w_med_sd(arr_pub,arr_pub_w))
 	print "\n PUB:At age %d mean is %f median is %f with %d weighted points" % (i+22, public[i][4], public[i][5], public[i][3]) 
 	private[i].append(np.sum(arr_pri_w))
 	private[i].append(weighted_mean(arr_pri,arr_pri_w))
 	private[i].append(weighted_median(arr_pri,arr_pri_w))
+	private[i].append(w_med_sd(arr_pri,arr_pri_w))
 	print "\n PRI:At age %d mean is %f median is %f with %d weighted points" % (i+22, private[i][4], private[i][5], private[i][3]) 
 	pri_total_dat += private[i][3]
 	pub_total_dat += public[i][3]
@@ -135,14 +154,15 @@ for i in range(45):
 non_total_dat = 0
 non_life_median = 0
 non_life_mean = 0
-#public[age-22, [all data values],[data weights],len,mean,median]
+#public[age-22, [all data values],[data weights],len,mean,median,sd]
 for i in range(48):
 	arr_non = np.array(non[i][1])
 	arr_non_w = np.array(non[i][2])
 	non[i].append(np.sum(arr_non_w))
-	non[i].append(weighted_mean(arr_pub,arr_non_w))
-	non[i].append(weighted_median(arr_pub,arr_non_w))
-	print "\n non:At age %d mean is %f median is %f with %d weighted points" % (i+22, public[i][4], public[i][5], public[i][3]) 
+	non[i].append(weighted_mean(arr_non,arr_non_w))
+	non[i].append(weighted_median(arr_non,arr_non_w))
+	non[i].append(w_med_sd(arr_non,arr_non_w))
+	print "\n highsch:At age %d mean is %f median is %f with %d weighted points" % (i+19, non[i][4], non[i][5], non[i][3]) 
 	non_total_dat += non[i][3]
 	if non[i][4]>0 : non_life_mean += non[i][4]
 	if non[i][5]>0 : non_life_median += non[i][5]
@@ -174,27 +194,27 @@ for i in r:
 	print "\n At %f interest rate: highsch NPV income -> mean = %f median = %f" % (i-1, npv_non_mean, npv_non_median)
 
 
-pub_mean = [row[4] for row in public]
-pri_mean = [row[4] for row in private]
-pub_med = [row[5] for row in public]
-pri_med = [row[5] for row in private]
+pub_mean = np.append(np.array([0,0,0]),[row[4] for row in public])
+pri_mean = np.append(np.array([0,0,0]),[row[4] for row in private])
+pub_med = np.append(np.array([0,0,0]),[row[5] for row in public])
+pri_med = np.append(np.array([0,0,0]),[row[5] for row in private])
 non_mean = [row[4] for row in non]
 non_med = [row[5] for row in non]
 f, axarr= plt.subplots(2,sharex=True)
-axarr[0].plot(np.arange(22,67),pub_mean,'bs',label='Mean(public)')
-axarr[0].plot(np.arange(22,67),pub_med,'b^',label='Median(public)')
-axarr[0].plot(np.arange(22,67),pri_mean,'rs',label='Mean(private)')
-axarr[0].plot(np.arange(22,67),pri_med,'r^',label='Median(private)')
+axarr[0].plot(np.arange(19,67),pub_mean,'bs',label='Mean(public)')
+axarr[0].plot(np.arange(19,67),pub_med,'b^',label='Median(public)')
+axarr[0].plot(np.arange(19,67),pri_mean,'rs',label='Mean(private)')
+axarr[0].plot(np.arange(19,67),pri_med,'r^',label='Median(private)')
 axarr[0].plot(np.arange(19,67),non_mean,'gs',label='Mean(highsch)')
 axarr[0].plot(np.arange(19,67),non_med,'g^',label='Median(highsch)')
 axarr[0].set_title('Mean & Median Annual Salary at Age')
 axarr[0].legend(bbox_to_anchor=(0.2, 1.0))
-axarr[1].plot(np.arange(22,67),np.cumsum(pub_mean),'b-',label='Mean(public)')
-axarr[1].plot(np.arange(22,67),np.cumsum(pub_med),'b--',label='Median(public)')
-axarr[1].plot(np.arange(22,67),np.cumsum(pri_mean),'r-',label='Mean(private)')
-axarr[1].plot(np.arange(22,67),np.cumsum(pri_med),'r--',label='Median(private)')
-axarr[1].plot(np.arange(19,67),np.cumsum(pri_mean),'g-',label='Mean(highsch)')
-axarr[1].plot(np.arange(19,67),np.cumsum(pri_med),'g--',label='Median(highsch)')
+axarr[1].plot(np.arange(19,67),np.cumsum(pub_mean),'b-',label='Mean(public)')
+axarr[1].plot(np.arange(19,67),np.cumsum(pub_med),'b--',label='Median(public)')
+axarr[1].plot(np.arange(19,67),np.cumsum(pri_mean),'r-',label='Mean(private)')
+axarr[1].plot(np.arange(19,67),np.cumsum(pri_med),'r--',label='Median(private)')
+axarr[1].plot(np.arange(19,67),np.cumsum(non_mean),'g-',label='Mean(highsch)')
+axarr[1].plot(np.arange(19,67),np.cumsum(non_med),'g--',label='Median(highsch)')
 axarr[1].set_title('Mean & Median Cummulative Salary at Age')
 
 axarr[1].legend(bbox_to_anchor=(0.2, 1.0))
@@ -203,3 +223,6 @@ plt.xlabel('Age')
 plt.grid(True)
 
 plt.show()
+
+
+filenames = ['pub.csv','private.csv','high.csv']
