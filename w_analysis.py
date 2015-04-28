@@ -167,9 +167,9 @@ for i in range(48):
 	if non[i][4]>0 : non_life_mean += non[i][4]
 	if non[i][5]>0 : non_life_median += non[i][5]
 
-print "\n PUB: %d weighted data points giving lifetime income mean %f, median %f" % (pub_total_dat, pub_life_mean, pub_life_median)
-print "\n PRI: %d weighted data points giving lifetime income mean %f, median %f" % (pri_total_dat, pri_life_mean, pri_life_median)
-print "\n NON: %d weighted data points giving lifetime income mean %f, median %f" % (non_total_dat, non_life_mean, non_life_median)
+print "\n PUB: %d weighted data points giving lifetime salary mean %f, median %f" % (pub_total_dat, pub_life_mean, pub_life_median)
+print "\n PRI: %d weighted data points giving lifetime salary mean %f, median %f" % (pri_total_dat, pri_life_mean, pri_life_median)
+print "\n NON: %d weighted data points giving lifetime salary mean %f, median %f" % (non_total_dat, non_life_mean, non_life_median)
 
 r = np.linspace(1.01,1.1,10)
 for i in r:
@@ -189,9 +189,9 @@ for i in r:
 		ir = math.pow(i,x)
 		if non[x][4]>0 : npv_non_mean += (non[x][4]) / ir
 		if non[x][5]>0 : npv_non_median += (non[x][5]) / ir
-	print "\n At %f interest rate: public NPV income -> mean = %f median = %f" % (i-1, npv_pub_mean, npv_pub_median)
-	print "\n At %f interest rate: private NPV income -> mean = %f median = %f" % (i-1, npv_pri_mean, npv_pri_median)
-	print "\n At %f interest rate: highsch NPV income -> mean = %f median = %f" % (i-1, npv_non_mean, npv_non_median)
+	print "\n At %f interest rate: public NPV lifetime salary -> mean = %f median = %f" % (i-1, npv_pub_mean, npv_pub_median)
+	print "\n At %f interest rate: private NPV lifetime salary -> mean = %f median = %f" % (i-1, npv_pri_mean, npv_pri_median)
+	print "\n At %f interest rate: highsch NPV lifetime salary -> mean = %f median = %f" % (i-1, npv_non_mean, npv_non_median)
 
 
 pub_mean = np.append(np.array([0,0,0]),[row[4] for row in public])
