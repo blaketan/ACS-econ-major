@@ -2,7 +2,13 @@ import csv
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
+def create_out(med,sd,output,offset):
+	with open (output,'w') as csvfile:
+		f = ['age','med','sd']
+		writer=csv.DictWriter(csvfile,fieldnames=f)
+		writer.writeheader()
+		for i in range(len(med)):
+			writer.writerow({'age': i+offset, 'med': med[i], 'sd': sd[i]})
 def weighted_median(data,weight):
 	if len(data)==0:
 		return 0
@@ -23,6 +29,7 @@ def weighted_mean(data,weight):
 	else:
 		return np.average(data,weights=weight)
 def w_med_sd(data,weight):
+	# Refer to http://www.census.gov/acs/www/Downloads/data_documentation/pums/Accuracy/2009_2013AccuracyPUMS.pdf section 7.2.4
 	if len(data)<2:
 		return 0
 	indices = np.argsort(data)
@@ -200,6 +207,10 @@ pub_med = np.append(np.array([0,0,0]),[row[5] for row in public])
 pri_med = np.append(np.array([0,0,0]),[row[5] for row in private])
 non_mean = [row[4] for row in non]
 non_med = [row[5] for row in non]
+pub_sd = np.append(np.array([0,0,0]),[row[6] for row in public])
+pri_sd = np.append(np.array([0,0,0]),[row[6] for row in private])
+non_sd = [row[6] for row in non]
+
 f, axarr= plt.subplots(2,sharex=True)
 axarr[0].plot(np.arange(19,67),pub_mean,'bs',label='Mean(public)')
 axarr[0].plot(np.arange(19,67),pub_med,'b^',label='Median(public)')
@@ -224,5 +235,6 @@ plt.grid(True)
 
 plt.show()
 
-
-filenames = ['pub.csv','private.csv','high.csv']
+create_out(pub_med,pub_sd,"pub.csv",22)
+create_out(pri_med,pri_sd,"pri.csv",22)
+create_out(non_med,non_sd,"high.csv",19)
